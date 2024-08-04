@@ -207,8 +207,8 @@ BEGIN
     VALUES (@SchemaName, @TableName, 'TABLE', 'U', @SQL);
     */
 
-    SET @SQL = 'IF (OBJECT_ID(''' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup') + ''', ''U'')) IS NOT NULL ' +
-                 'DROP TABLE ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup') + ';';
+    SET @SQL = 'IF (OBJECT_ID(''' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup_sp_identity_rebirth') + ''', ''U'')) IS NOT NULL ' +
+                 'DROP TABLE ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup_sp_identity_rebirth') + ';';
     INSERT INTO @SQLCmd2IdentityRebirth
     (
       SchemaName
@@ -224,7 +224,7 @@ BEGIN
     SET @SQL = 'SELECT ' +
                  '* ' +
                'INTO ' +
-                  QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup') + ' ' +
+                  QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup_sp_identity_rebirth') + ' ' +
                'FROM ' +
                   QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName) + ';';
     INSERT INTO @SQLCmd2IdentityRebirth
@@ -264,7 +264,7 @@ BEGIN
 
     -- INSERT of SELECT
     SET @SQL = 'INSERT INTO ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName) + ' (' + SUBSTRING(@FieldList, 1, LEN(@FieldList)-1) + ') ' +
-               'SELECT ' + SUBSTRING(@FieldList, 1, LEN(@FieldList)-1)  + ' FROM ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup') + ';';
+               'SELECT ' + SUBSTRING(@FieldList, 1, LEN(@FieldList)-1)  + ' FROM ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup_sp_identity_rebirth') + ';';
     INSERT INTO @SQLCmd2IdentityRebirth
     (
       SchemaName
