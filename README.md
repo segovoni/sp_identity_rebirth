@@ -1,4 +1,4 @@
-# sp_identity_rebirth
+# sp_identity_rebirth: Regenerate IDENTITY column values in SQL Server and Azure SQL!
 
 ## Overview
 
