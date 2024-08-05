@@ -100,7 +100,7 @@ BEGIN
       -- SQL command table
       @SQLCmd2IdentityRebirth TABLE
 	    (
-  	    ID INTEGER IDENTITY(1, 1) NOT NULL
+        ID INTEGER IDENTITY(1, 1) NOT NULL
         ,SchemaName SYSNAME NOT NULL
         ,TableName SYSNAME NOT NULL
         ,ObjectType SYSNAME NOT NULL
@@ -108,6 +108,7 @@ BEGIN
         ,OperationOrder INTEGER NOT NULL
         ,SQLCmd NVARCHAR(1024) NOT NULL
       );
+
     DECLARE
       @TranCount INTEGER = @@TRANCOUNT
       ,@SQL NVARCHAR(MAX) = ''
