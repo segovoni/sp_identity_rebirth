@@ -94,7 +94,7 @@ BEGIN
     RETURN;
   END;
 
-  -- Let's go!
+  -- Begin the identity rebirth process
   BEGIN TRY
     DECLARE
       -- SQL command table
@@ -114,7 +114,7 @@ BEGIN
       ,@FieldList VARCHAR(MAX) = QUOTENAME('Old_' + @IdentityColumn) +', ';
 
     IF (@TranCount = 0)
-      -- Opening an explicit transaction to avoid auto commits
+      -- Open an explicit transaction to avoid auto commits
       BEGIN TRANSACTION
   
     -- Drop foreign key
@@ -170,6 +170,7 @@ BEGIN
     )
     VALUES (@SchemaName, @TableName, 'TABLE', 'A', 2, @SQL);
 
+    -- Update the temporary column with the current identity values
     SET @SQL = 'UPDATE ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName) + ' SET ' + QUOTENAME('Old_' + @IdentityColumn) + ' = ' + QUOTENAME(@IdentityColumn) + ';';
     INSERT INTO @SQLCmd2IdentityRebirth
     (
@@ -182,31 +183,7 @@ BEGIN
     )
     VALUES (@SchemaName, @TableName, 'TABLE', 'U', 3, @SQL);
 
-    -- Update the temporary column with new compacted identity values
-    /*
-    SET @SQL = 'WITH CTE AS ' +
-               '( ' +
-                  'SELECT ' +
-                     QUOTENAME(@PrimaryKeyColumnName) + ' ' +
-                     ',ROW_NUMBER() OVER (ORDER BY ' + QUOTENAME(@IdentityColumn) + ') AS NewID ' +
-                  'FROM ' +
-                     QUOTENAME(@TableName) +
-               ') ' +
-               'UPDATE ' + QUOTENAME(@TableName) + ' ' +
-                 'SET TempIdentity = CTE.NewID ' +
-               'FROM ' + QUOTENAME(@TableName) + ' T ' +
-               'JOIN CTE ON T.' + QUOTENAME(@PrimaryKeyColumnName) + ' = CTE.' + QUOTENAME(@PrimaryKeyColumnName) + ';';
-    INSERT INTO @SQLCmd2IdentityRebirth
-    (
-      SchemaName
-      ,TableName
-      ,ObjectType
-      ,OperationType
-      ,SQLCmd
-    )
-    VALUES (@SchemaName, @TableName, 'TABLE', 'U', @SQL);
-    */
-
+    -- Drop the backup table if it exists
     SET @SQL = 'IF (OBJECT_ID(''' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup_sp_identity_rebirth') + ''', ''U'')) IS NOT NULL ' +
                  'DROP TABLE ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup_sp_identity_rebirth') + ';';
     INSERT INTO @SQLCmd2IdentityRebirth
@@ -251,6 +228,7 @@ BEGIN
     )
     VALUES (@SchemaName, @TableName, 'TABLE', 'T', 6, @SQL);
 
+    -- Construct the field list
     SELECT
       @FieldList = @FieldList + QUOTENAME(COLUMN_NAME) + ', ' 
     FROM
@@ -262,7 +240,7 @@ BEGIN
     ORDER BY
       ORDINAL_POSITION;
 
-    -- INSERT of SELECT
+    -- Insert data into the original table from the backup table
     SET @SQL = 'INSERT INTO ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName) + ' (' + SUBSTRING(@FieldList, 1, LEN(@FieldList)-1) + ') ' +
                'SELECT ' + SUBSTRING(@FieldList, 1, LEN(@FieldList)-1)  + ' FROM ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName + '_Backup_sp_identity_rebirth') + ';';
     INSERT INTO @SQLCmd2IdentityRebirth
@@ -379,6 +357,7 @@ BEGIN
     ORDER BY
       OperationOrder;
 
+    -- Cursor to loop through each command
     DECLARE C_SQL_CMD CURSOR LOCAL FORWARD_ONLY READ_ONLY FOR
       SELECT
         SQLCmd
@@ -392,6 +371,7 @@ BEGIN
     -- First fetch
     FETCH NEXT FROM C_SQL_CMD INTO @SQL;
 
+    -- Execute each step
     WHILE (@@FETCH_STATUS=0)
     BEGIN
       PRINT(@SQL);
@@ -404,13 +384,15 @@ BEGIN
 
     PRINT 'Identity column rebirth completed successfully.';
 
+    -- If no previous transaction, commit the current transaction
     IF (@TranCount = 0) AND (@@ERROR = 0)
       COMMIT TRANSACTION;
 
     SET NOCOUNT OFF;
   END TRY
   BEGIN CATCH
-    IF (@TranCount = 0)
+    -- Rollback transaction in case of error
+    IF (@TranCount = 0) -- AND (XACT_STATE() <> 0)  -- check this XACT_STATE() <> 0
       ROLLBACK TRANSACTION;
 
     -- Error handling
