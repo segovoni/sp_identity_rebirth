@@ -393,23 +393,12 @@ BEGIN
   END TRY
   BEGIN CATCH
     -- Rollback transaction in case of error
-    IF (@TranCount = 0) -- AND (XACT_STATE() <> 0)  -- check this XACT_STATE() <> 0
+    IF (@TranCount = 0) AND (@@TRANCOUNT <> 0) --AND (XACT_STATE() <> 0)  -- Check this XACT_STATE() <> 0
       ROLLBACK TRANSACTION;
-
-    -- Error handling
-    DECLARE
-      @ErrorMessage NVARCHAR(MAX)
-      ,@ErrorSeverity INTEGER
-      ,@ErrorState INTEGER;
-
-    SELECT 
-      @ErrorMessage = ERROR_MESSAGE()
-      ,@ErrorSeverity = ERROR_SEVERITY()
-      ,@ErrorState = ERROR_STATE();
 
     SET NOCOUNT OFF;
 
-    RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    THROW;
   END CATCH
 END;
 GO
